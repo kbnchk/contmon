@@ -24,7 +24,7 @@ func Container1() Container {
 }
 
 // GetData gets data from sensors and represent it in Data struct.
-// Modbus-RTU id a serial communication standert so I close each device handler before opening new one
+// Modbus-RTU is a serial communication standart so I close each device's handler before opening new one
 // instead of using defer statement because it makes all handler work simultaneously causing timeouts.
 func (c *container1) GetData() Data {
 	meteoOk := true
