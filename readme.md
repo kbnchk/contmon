@@ -10,7 +10,7 @@ Device module implements only some basic functions necessary for my data structu
 
 Sensors device functions implemented through [go modbus](https://github.com/goburrow/modbus) and [Gin](https://github.com/gin-gonic/gin) is used as web server framework.
 
-Web server дшыеуты port 1588 and supports only http-get request to /data endpoint. It's enough for now.
+Web server listens port 1588 and supports only http-get request to /data endpoint. It's enough for now.
 
 Response example:
 
