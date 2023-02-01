@@ -6,11 +6,11 @@ At this moment it supports only my own sensors setup:
 * esq760 fan frequency modulator
 * zm194-d9y 3-phase electric meter
 
-Device module implements only some basic functions necessary for my data structure. ESQ760 device implementation have some additional methods unused in this code (such as switching frequency control mode and remote frequncy control through modbus-rtu).
+Device module implements only some basic functions necessary for my data structure. ESQ760 device implementation have some additional methods unused in this code (such as switching frequency control mode and remote frequency control through modbus-rtu).
 
 Sensors device functions implemented through [go modbus](https://github.com/goburrow/modbus) and [Gin](https://github.com/gin-gonic/gin) is used as web server framework.
 
-Web server is listening port 1588 and supports only http-get request to /data endpoint. It's enough for now.
+Web server дшыеуты port 1588 and supports only http-get request to /data endpoint. It's enough for now.
 
 Response example:
 
