@@ -14,6 +14,31 @@ Web server listens port 1588 and supports only http-get request to /data endpoin
 
 Response example:
 
-`{ "Meteo": { "Temp": 5.9, "Humidity": 53.5 }, "Fan": { "Frequency": 34.51, "State": "Прямое вращение", "ErrorCode": 0 }, "Meter": { "Voltage": { "Phase1": 226, "Phase2": 225, "Phase3": 225 }, "Power": { "Phase1": 885, "Phase2": 749, "Phase3": 765 } } }`
+`{
+    "Meteo": {
+        "Ok": true,
+        "Temp": 6,
+        "Humidity": 50.7
+    },
+    "Fan": {
+        "Ok": true,
+        "Frequency": 33.66,
+        "State": "Прямое вращение",
+        "ErrorCode": 0
+    },
+    "Meter": {
+        "Ok": true,
+        "Voltage": {
+            "Phase1": 228,
+            "Phase2": 227,
+            "Phase3": 227
+        },
+        "Power": {
+            "Phase1": 884,
+            "Phase2": 748,
+            "Phase3": 765
+        }
+    }
+}`
 
 There is no any config and any configurable parametrs at this time, all settings are hardcoded in container1 struct implementing Container interface.

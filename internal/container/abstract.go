@@ -1,7 +1,7 @@
 package container
 
 type Container interface {
-	GetData() (Data, error)
+	GetData() Data
 }
 
 type Data struct {
@@ -11,17 +11,20 @@ type Data struct {
 }
 
 type Meteo struct {
+	Ok       bool
 	Temp     float64
 	Humidity float64
 }
 
 type Fan struct {
+	Ok        bool
 	Frequency float64
 	State     string
 	ErrorCode uint8
 }
 
 type Meter struct {
+	Ok      bool
 	Voltage Voltage
 	Power   Power
 }

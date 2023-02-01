@@ -22,7 +22,7 @@ func CWS19New(serial string, address byte, baudrate, databits, stopbits int, par
 	handler.Parity = parity
 	handler.StopBits = stopbits
 	handler.SlaveId = address
-	handler.Timeout = 3 * time.Second
+	handler.Timeout = 2 * time.Second
 
 	if err := handler.Connect(); err != nil {
 		return CWS19{}, err

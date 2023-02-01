@@ -8,13 +8,8 @@ import (
 )
 
 func GetData(c *gin.Context) {
-
 	cont := container.Container1()
-	data, err := cont.GetData()
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	data := cont.GetData()
+	c.IndentedJSON(http.StatusOK, data)
 
-	} else {
-		c.IndentedJSON(http.StatusOK, data)
-	}
 }
