@@ -1,8 +1,4 @@
-package container
-
-type Container interface {
-	GetData() Data
-}
+package entity
 
 type Data struct {
 	Meteo Meteo

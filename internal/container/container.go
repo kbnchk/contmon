@@ -1,13 +1,21 @@
 package container
 
 import (
+	"time"
+
 	"github.com/kbnchk/contmon/internal/device"
+	"github.com/kbnchk/contmon/internal/entity"
 )
+
+type Container interface {
+	GetData() entity.Data
+}
 
 type container1 struct {
 	serial, parity                string
 	baudrate, databits, stopbits  int
 	meteoAddr, fanAddr, meterAddr byte
+	timeout                       time.Duration
 }
 
 func Container1() Container {
@@ -20,18 +28,19 @@ func Container1() Container {
 		meteoAddr: 1,
 		fanAddr:   2,
 		meterAddr: 101,
+		timeout:   2 * time.Second,
 	}
 }
 
 // GetData gets data from sensors and represent it in Data struct.
 // Modbus-RTU is a serial communication standart so I close each device's handler before opening new one
 // instead of using defer statement because it makes all handler work simultaneously causing timeouts.
-func (c *container1) GetData() Data {
+func (c *container1) GetData() entity.Data {
 	meteoOk := true
 	fanOk := true
 	meterOk := true
 
-	meteo, err := device.CWS19New(c.serial, c.meteoAddr, c.baudrate, c.databits, c.stopbits, c.parity)
+	meteo, err := device.CWS19New(c.serial, c.meteoAddr, c.baudrate, c.databits, c.stopbits, c.parity, c.timeout)
 	if err != nil {
 		meteoOk = false
 	}
@@ -45,7 +54,7 @@ func (c *container1) GetData() Data {
 	}
 	meteo.Close()
 
-	fan, err := device.ESQ760New(c.serial, c.fanAddr, c.baudrate, c.databits, c.stopbits, c.parity)
+	fan, err := device.ESQ760New(c.serial, c.fanAddr, c.baudrate, c.databits, c.stopbits, c.parity, c.timeout)
 	if err != nil {
 		fanOk = false
 	}
@@ -63,11 +72,10 @@ func (c *container1) GetData() Data {
 	}
 	fan.Close()
 
-	meter, err := device.ZM194New(c.serial, c.meterAddr, c.baudrate, c.databits, c.stopbits, c.parity)
+	meter, err := device.ZM194New(c.serial, c.meterAddr, c.baudrate, c.databits, c.stopbits, c.parity, c.timeout)
 	if err != nil {
 		meterOk = false
 	}
-	defer meter.Close()
 
 	p1v, p2v, p3v, err := meter.GetVoltage()
 	if err != nil {
@@ -80,26 +88,26 @@ func (c *container1) GetData() Data {
 	}
 	meter.Close()
 
-	return Data{
-		Meteo: Meteo{
+	return entity.Data{
+		Meteo: entity.Meteo{
 			Ok:       meteoOk,
 			Temp:     temp,
 			Humidity: hum,
 		},
-		Fan: Fan{
+		Fan: entity.Fan{
 			Ok:        fanOk,
 			Frequency: freq,
 			State:     state,
 			ErrorCode: errorcode,
 		},
-		Meter: Meter{
+		Meter: entity.Meter{
 			Ok: meterOk,
-			Voltage: Voltage{
+			Voltage: entity.Voltage{
 				Phase1: p1v,
 				Phase2: p2v,
 				Phase3: p3v,
 			},
-			Power: Power{
+			Power: entity.Power{
 				Phase1: p1p,
 				Phase2: p2p,
 				Phase3: p3p,

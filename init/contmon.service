@@ -1,0 +1,12 @@
+[Unit]
+Description=Mining container monitoring server
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/bin/contmon
+
+[Install]
+WantedBy=multi-user.target

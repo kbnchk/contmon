@@ -15,14 +15,14 @@ type CWS19 struct {
 	address byte
 }
 
-func CWS19New(serial string, address byte, baudrate, databits, stopbits int, parity string) (CWS19, error) {
+func CWS19New(serial string, address byte, baudrate, databits, stopbits int, parity string, timeout time.Duration) (CWS19, error) {
 	handler := modbus.NewRTUClientHandler(serial)
 	handler.BaudRate = baudrate
 	handler.DataBits = databits
 	handler.Parity = parity
 	handler.StopBits = stopbits
 	handler.SlaveId = address
-	handler.Timeout = 2 * time.Second
+	handler.Timeout = timeout
 
 	if err := handler.Connect(); err != nil {
 		return CWS19{}, err

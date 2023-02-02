@@ -14,14 +14,14 @@ type ZM194 struct {
 	address byte
 }
 
-func ZM194New(serial string, address byte, baudrate, databits, stopbits int, parity string) (ZM194, error) {
+func ZM194New(serial string, address byte, baudrate, databits, stopbits int, parity string, timeout time.Duration) (ZM194, error) {
 	handler := modbus.NewRTUClientHandler(serial)
 	handler.BaudRate = baudrate
 	handler.DataBits = databits
 	handler.Parity = parity
 	handler.StopBits = stopbits
 	handler.SlaveId = address
-	handler.Timeout = 2 * time.Second
+	handler.Timeout = timeout
 
 	if err := handler.Connect(); err != nil {
 		return ZM194{}, err

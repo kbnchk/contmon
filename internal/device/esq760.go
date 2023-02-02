@@ -16,14 +16,14 @@ type ESQ760 struct {
 	address byte
 }
 
-func ESQ760New(serial string, address byte, baudrate, databits, stopbits int, parity string) (ESQ760, error) {
+func ESQ760New(serial string, address byte, baudrate, databits, stopbits int, parity string, timeout time.Duration) (ESQ760, error) {
 	handler := modbus.NewRTUClientHandler(serial)
 	handler.BaudRate = baudrate
 	handler.DataBits = databits
 	handler.Parity = parity
 	handler.StopBits = stopbits
 	handler.SlaveId = address
-	handler.Timeout = 2 * time.Second
+	handler.Timeout = timeout
 
 	if err := handler.Connect(); err != nil {
 		return ESQ760{}, err
