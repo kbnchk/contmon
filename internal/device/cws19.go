@@ -2,63 +2,55 @@ package device
 
 import (
 	"encoding/binary"
-	"math"
-	"time"
+	"fmt"
 
 	"github.com/goburrow/modbus"
+	"github.com/kbnchk/contmon/internal/proto"
 )
 
-// Star Meter CWS19 temperature and humidity sensor
-type CWS19 struct {
+// Star Meter WS19 temperature and humidity sensor
+type cws19 struct {
 	handler *modbus.RTUClientHandler
 	client  modbus.Client
-	address byte
 }
 
-func CWS19New(serial string, address byte, baudrate, databits, stopbits int, parity string, timeout time.Duration) (CWS19, error) {
-	handler := modbus.NewRTUClientHandler(serial)
-	handler.BaudRate = baudrate
-	handler.DataBits = databits
-	handler.Parity = parity
-	handler.StopBits = stopbits
+// creades CWS19 temperature and humidity sensor
+func CWS19(c proto.RTUConfig, address byte) Device {
+	handler := proto.NewRTUHadler(c)
 	handler.SlaveId = address
-	handler.Timeout = timeout
-
-	if err := handler.Connect(); err != nil {
-		return CWS19{}, err
-	}
-	return CWS19{
+	return &cws19{
 		handler: handler,
 		client:  modbus.NewClient(handler),
-		address: address,
-	}, nil
-}
-
-// Gets current temperature in Celsium
-func (d *CWS19) GetTemperature() (float64, error) {
-	result, err := d.client.ReadHoldingRegisters(0, 2)
-	if err != nil {
-		return 125, err
 	}
-	tempraw := binary.BigEndian.Uint16(result[:2])
-	temp := float64(tempraw)/10 - 40
-	temp = math.Round(temp*10) / 10
-	return temp, nil
 }
 
-// Gets current humidity in %
-func (d *CWS19) GetHumidity() (float64, error) {
-	result, err := d.client.ReadHoldingRegisters(0, 2)
-	if err != nil {
-		return 0, err
+// Gets all data
+func (d cws19) GetData() map[string]interface{} {
+	result := make(map[string]interface{})
+	data := make(map[string]interface{})
+
+	if err := d.handler.Connect(); err != nil {
+		data["Errors"] = fmt.Sprintf("CWS19 error conntcting device = %v", err)
+		data["Ok"] = false
+	} else {
+		defer d.handler.Close()
+		sensordata, err := d.client.ReadHoldingRegisters(0, 2)
+		if err != nil {
+			data["Errors"] = fmt.Sprintf("CWS19 error reading register = %v", err)
+			data["Ok"] = false
+		} else {
+			tempdata := binary.BigEndian.Uint16(sensordata[:2])
+			//temperature sensor returns uint 0-1650 which matchs temp from -40 to +125 C
+			temperature := (tempdata - 400) / 10
+			humdata := binary.BigEndian.Uint16(sensordata[2:])
+			//humidity sensor returns uint 0-1000 which matchs 0-100 %RH
+			humidity := float64(humdata) / 10
+
+			data["Humidity"] = humidity
+			data["Temp"] = temperature
+			data["Ok"] = true
+		}
 	}
-	humraw := binary.BigEndian.Uint16(result[2:])
-	hum := float64(humraw) / 10
-	hum = math.Round(hum*10) / 10
-	return hum, nil
-}
-
-// Closes client handler
-func (d *CWS19) Close() {
-	d.handler.Close()
+	result["Meteo"] = data
+	return result
 }

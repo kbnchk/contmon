@@ -4,39 +4,73 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
-	"time"
+	"strings"
 
 	"github.com/goburrow/modbus"
+	"github.com/kbnchk/contmon/internal/proto"
 )
 
 // ESQ-760 Frequency modulator
-type ESQ760 struct {
+type esq760 struct {
 	handler *modbus.RTUClientHandler
 	client  modbus.Client
-	address byte
 }
 
-func ESQ760New(serial string, address byte, baudrate, databits, stopbits int, parity string, timeout time.Duration) (ESQ760, error) {
-	handler := modbus.NewRTUClientHandler(serial)
-	handler.BaudRate = baudrate
-	handler.DataBits = databits
-	handler.Parity = parity
-	handler.StopBits = stopbits
+// Creates new ESQ-760 Frequency modulator
+func ESQ760(c proto.RTUConfig, address byte) Device {
+	handler := proto.NewRTUHadler(c)
 	handler.SlaveId = address
-	handler.Timeout = timeout
-
-	if err := handler.Connect(); err != nil {
-		return ESQ760{}, err
-	}
-	return ESQ760{
+	return &esq760{
 		handler: handler,
 		client:  modbus.NewClient(handler),
-		address: address,
-	}, nil
+	}
+}
+
+func (d esq760) GetData() map[string]interface{} {
+	result := make(map[string]interface{})
+	data := make(map[string]interface{})
+
+	if err := d.handler.Connect(); err != nil {
+		data["Errors"] = fmt.Sprintf("ESQ760 error connecting device = %v", err)
+		data["Ok"] = false
+	} else {
+		errors := make([]string, 0, 3)
+
+		errcode, err := d.GetError()
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("ESQ760 error getting errcode = %v", err))
+		} else {
+			data["ErrorCode"] = errcode
+		}
+
+		state, err := d.GetStatus()
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("ESQ760 error getting status = %v", err))
+		} else {
+			data["State"] = state
+		}
+
+		frequency, err := d.GetFreq()
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("ESQ760 error getting frequency = %v", err))
+		} else {
+			data["Frequency"] = frequency
+		}
+
+		if len(errors) == 0 {
+			data["Ok"] = true
+		} else {
+			data["Errors"] = strings.Join(errors, ",\n")
+			data["Ok"] = false
+		}
+	}
+
+	result["Fan"] = data
+	return result
 }
 
 // Sets frequency control mode to RTU disabling manual frequency control with potentiometer or buttons
-func (d *ESQ760) SetRTUControl() error {
+func (d *esq760) SetRTUControl() error {
 	_, err := d.client.WriteSingleRegister(uint16(0x0002), 0)
 	if err != nil {
 		return err
@@ -48,17 +82,8 @@ func (d *ESQ760) SetRTUControl() error {
 	return nil
 }
 
-// Sets frequency control mode to potentiometer
-func (d *ESQ760) SetManualControl() error {
-	_, err := d.client.WriteSingleRegister(uint16(0x0006), 1)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // Gets current output frequency
-func (d *ESQ760) GetFreq() (float64, error) {
+func (d *esq760) GetFreq() (float64, error) {
 	result, err := d.client.ReadInputRegisters(uint16(0x1100), 1)
 	if err != nil {
 		return 0, err
@@ -70,7 +95,7 @@ func (d *ESQ760) GetFreq() (float64, error) {
 }
 
 // Gets current state
-func (d *ESQ760) GetStatus() (string, error) {
+func (d *esq760) GetStatus() (string, error) {
 	result, err := d.client.ReadHoldingRegisters(uint16(0x6000), 1)
 	if err != nil {
 		return "", err
@@ -92,7 +117,7 @@ func (d *ESQ760) GetStatus() (string, error) {
 }
 
 // Gets last error code
-func (d *ESQ760) GetError() (uint8, error) {
+func (d *esq760) GetError() (uint8, error) {
 	result, err := d.client.ReadHoldingRegisters(uint16(0x6002), 1)
 	if err != nil {
 		return 0, err
@@ -100,8 +125,17 @@ func (d *ESQ760) GetError() (uint8, error) {
 	return uint8(binary.BigEndian.Uint16(result)), nil
 }
 
+// Sets frequency control mode to potentiometer
+func (d *esq760) SetManualControl() error {
+	_, err := d.client.WriteSingleRegister(uint16(0x0006), 1)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Sets output frequency. You need to SetRTUControl() first
-func (d *ESQ760) SetFreq(v uint16) error {
+func (d *esq760) SetFreq(v uint16) error {
 	if v > 500 {
 		return fmt.Errorf("value must be 0<500")
 	}
@@ -110,9 +144,4 @@ func (d *ESQ760) SetFreq(v uint16) error {
 		return err
 	}
 	return nil
-}
-
-// Closes client handler
-func (d *ESQ760) Close() {
-	d.handler.Close()
 }
